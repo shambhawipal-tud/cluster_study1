@@ -1,1 +1,1 @@
-# cluster_study1
+# This project focuses on making interactive real time clusters
