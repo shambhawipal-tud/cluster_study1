@@ -20,10 +20,18 @@ with open(r"C:\Users\shambhawi\Source\Repos\cluster_study1\Case Study-1.txt", "r
 dialogues = [line for line in lines if ':' in line]
 print(dialogues)
 
-# Define prompt template
-def create_prompt(utterance):
+# Define prompt template to include only the previous utterance
+def create_prompt(index, dialogues):
+    # Get the previous utterance if possible
+    prev_utterance = dialogues[index-1] if index > 0 else ""
+    
+    utterance = dialogues[index].split(":", 1)[1].strip()
+
     return (
-        f"Analyze the following sentence and extract the following:\n"
+        f"Analyze the following sentence in the context of the previous utterance:\n"
+        f"Previous: \"{prev_utterance}\"\n"
+        f"Current: \"{utterance}\"\n"
+        f"Extract the following:\n"
         f"1. Semantic meaning (e.g., complaint, justification, defense, evidence)\n"
         f"2. Tone (e.g., frustration, denial, neutral)\n"
         f"3. Topic categories: what is the topic of this statement\n\n"
@@ -34,9 +42,9 @@ def create_prompt(utterance):
 # Store results
 rows = []
 
-for line in dialogues:
-    speaker, utterance = line.split(":", 1)
-    prompt = create_prompt(utterance.strip())
+for i, line in enumerate(dialogues):
+    speaker, _ = line.split(":", 1)
+    prompt = create_prompt(i, dialogues)
 
     # Tokenize and get response from model
     inputs = tokenizer(text=prompt, return_tensors="pt").to(device)
@@ -64,7 +72,7 @@ for line in dialogues:
     print(f"Parsed result: {result}")
     rows.append({
         "speaker": speaker.strip(),
-        "utterance": utterance.strip(),
+        "utterance": line.split(":", 1)[1].strip(),
         "semantic": result.get("semantic", "unknown"),
         "tone": result.get("tone", "unknown"),
         "topics": ", ".join(result.get("topics", [])),  # Join list of topics as a string
