@@ -1,152 +1,103 @@
-import rdflib
-import re
-import requests
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+﻿import requests
+import urllib.parse
+from datetime import datetime
+from openai import OpenAI
+
+MODEL_NAME = "qwen2.5"
+TEMPERATURE = 0.3
+
+GRAPHDB_ENDPOINT = "http://127.0.0.1:7200/repositories/group_discussion/statements"
+HEADERS = {
+    "Content-Type": "application/sparql-update"
+}
+
+
+def sanitize_uri(text):
+    """
+    Shortens and sanitizes text to create a URI-safe slug.
+    """
+    short_text = text.split(".")[0][:100]  # Take first sentence only, max 100 chars
+    sanitized = short_text.replace(" ", "_").replace("(", "").replace(")", "").replace('"', "").replace(",", "").replace("'", "").replace(".", "")
+    return urllib.parse.quote(sanitized)
 
 
 def load_llm():
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
-    print("tokenizer loaded")
-    model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct")
-    print("model loaded")
-
-    # Move model to GPU if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-
-    print("Model moved to GPU")
-    return tokenizer, model, device
-
-def get_llm_response(tokenizer, model, device, prompt):
-   
-    # Tokenize and get response from model
-    inputs = tokenizer(text=prompt, return_tensors="pt").to(device)
-    with torch.no_grad():
-        output = model.generate(**inputs, max_new_tokens=100)
-    response = tokenizer.decode(output[0], skip_special_tokens=True)
-
-    # Debug print to see the raw response
-    print(f"Raw response: {response}")
-    return response
+    client = OpenAI(
+        base_url="http://127.0.0.1:11434/v1",
+        api_key="ollama"
+    )
+    return client
 
 
-# Function to parse dialogue file
+def get_llm_response(client, prompt):
+    response = client.chat.completions.create(
+        model=MODEL_NAME,
+        temperature=TEMPERATURE,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message.content.strip()
+
+
 def parse_dialogue(file_path):
     with open(file_path, "r", encoding="utf-8") as file:
-        lines = [line.strip() for line in file.readlines() if line.strip()]
-
-    # Keep only dialogue lines (lines with ':')
-    dialogues = [line for line in lines if ':' in line]
-    print(dialogues)
+        lines = [line.strip() for line in file if line.strip()]
+    dialogues = []
+    for line in lines:
+        if ':' in line:
+            participant, utterance = line.split(":", 1)
+            dialogues.append((participant.strip(), utterance.strip()))
     return dialogues
 
 
-# Function to dynamically extract topic from an utterance
-def extract_topic_from_utterance(utterance, tokenizer, model, device):
-    prompt = f"Identify the main topic or subject of the following sentence: '{utterance}'"
-    response = get_llm_response(tokenizer, model, device, prompt)
-    
-    # Extract topic from LLM response, assuming response is the topic
-    topic = response.strip()  # In this case, we assume the model directly returns the topic
-    return topic
+def insert_data_to_graphdb(person_id, utterance_id, content, previous_utterance_uri, timestamp):
+    person_uri = f"urn:person:{person_id}"
+    utterance_uri = f"urn:utterance:{person_id}_{utterance_id}"
+
+    sparql_update = f"""
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX urn: <urn:>
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+    INSERT DATA {{
+        <{person_uri}> rdfs:label "Person {person_id}" .
+
+        <{utterance_uri}> rdfs:label "{content}" .
+        <{utterance_uri}> <urn:spokenBy> <{person_uri}> .
+        <{utterance_uri}> <urn:hasTimestamp> "{timestamp}"^^xsd:dateTime .
+
+        {f'<{utterance_uri}> <urn:refersTo> <{previous_utterance_uri}> .' if previous_utterance_uri else ""}
+    }}
+    """
+
+    print("SPARQL Update:\n", sparql_update)
+    try:
+        response = requests.post(GRAPHDB_ENDPOINT, data=sparql_update, headers=HEADERS)
+        response.raise_for_status()
+        if response.status_code == 204:
+            print(f"Inserted utterance {utterance_id} for {person_id}")
+        else:
+            print(f"Error {response.status_code}: {response.text}")
+    except Exception as e:
+        print(f"Exception occurred: {e}")
 
 
-# Function to extract claim from an utterance
-def extract_claim_from_utterance(utterance, tokenizer, model, device):
-    prompt = f"Is there any claim or assertion made in the following sentence: '{utterance}'? If yes, summarize it."
-    response = get_llm_response(tokenizer, model, device, prompt)
-    
-    # Extract claim from LLM response
-    claim = response.strip()  # Assume the LLM returns the claim
-    return claim
+def process_dialogue_file(file_path):
+    client = load_llm()
+    dialogues = parse_dialogue(file_path)
 
-
-# Function to create RDF triples for the dialogue
-def create_rdf(dialogues, tokenizer, model, device):
-    g = rdflib.Graph()
-    EX = rdflib.Namespace("http://example.org/")
-    g.bind("ex", EX)
-
-    participants = {}  # Store participants
+    previous_utterance_uri = None
 
     for idx, (participant, utterance) in enumerate(dialogues):
-        # Create participant nodes if not already created
-        if participant not in participants:
-            participants[participant] = EX[participant]
+        person_id = sanitize_uri(participant)
+        utterance_id = f"uttr{idx+1}"
+        timestamp = datetime.utcnow().isoformat()
 
-        # Create unique ID for each utterance (based on its index)
-        utterance_node = EX[f"Utterance{idx+1}"]
+        # Insert data with connection to the previous utterance
+        insert_data_to_graphdb(person_id, utterance_id, utterance, previous_utterance_uri, timestamp)
 
-        # Add triples for the participant and utterance
-        g.add((participants[participant], rdflib.RDF.type, EX.Person))
-        g.add((utterance_node, rdflib.RDF.type, EX.Utterance))
-        g.add((utterance_node, EX.text, rdflib.Literal(utterance)))
-        g.add((utterance_node, EX.speaker, participants[participant]))
-
-        # Adding the role of the participant (e.g., Complainant, Accused, Facilitator)
-        role = "Facilitator"  # Example, should be inferred from the context
-        role_node = EX[role]
-        g.add((participants[participant], EX.HAS_ROLE, role_node))
-
-        # Dynamically extract claim from the utterance
-        claim = extract_claim_from_utterance(utterance)
-        if claim:
-            claim_node = EX[claim.replace(" ", "_")]
-            g.add((utterance_node, EX.MAKES_CLAIM, claim_node))
-
-        # Dynamically extract topic from the utterance using LLM
-        topic = extract_topic_from_utterance(utterance)
-        if topic:
-            topic_node = EX[topic.replace(" ", "_")]
-            g.add((utterance_node, EX.MENTIONS_TOPIC, topic_node))
-
-        # Dynamically extract stance based on the content of the utterance
-        stance = "Support" if "agree" in utterance.lower() else "Neutral"
-        stance_node = EX[stance]
-        g.add((utterance_node, EX.HAS_STANCE, stance_node))
-
-        # Dynamically extract intent (Clarify, Reassure, etc.)
-        intent = "Clarify" if "clarify" in utterance.lower() else "Defend"
-        intent_node = EX[intent]
-        g.add((utterance_node, EX.HAS_INTENT, intent_node))
-
-        # Check if this utterance refers to the previous one
-        if idx > 0:
-            prev_utterance_node = EX[f"Utterance{idx}"]
-            g.add((utterance_node, EX.REFERS_TO, prev_utterance_node))
-
-        # Check if evidence is provided (e.g., timestamp, document reference)
-        if "performance" in utterance.lower():
-            evidence = "Message sent at 11:07 PM"
-            evidence_node = EX[evidence.replace(" ", "_")]
-            g.add((utterance_node, EX.PROVIDES_EVIDENCE, evidence_node))
-
-    return g
-
-
-# Function to insert the RDF graph into GraphDB using SPARQL
-def insert_into_graphdb(graph, sparql_endpoint):
-    headers = {'Content-Type': 'application/x-turtle'}
-    rdf_data = graph.serialize(format="turtle")
-
-    response = requests.post(sparql_endpoint, data=rdf_data, headers=headers)
-
-    if response.status_code == 200:
-        print("Data inserted successfully")
-    else:
-        print(f"Failed to insert data. Status code: {response.status_code}")
-
-
-# Main function
-def main():
-    file_path = r"C:\Users\shambhawi\Source\Repos\cluster_study1\Case Study-1.txt"  
-    sparql_endpoint = 'http://tud1006635:7200/repositories/group_discussion' 
-    tokenizer, model, device = load_llm()
-    dialogues = parse_dialogue(file_path)
-    rdf_graph = create_rdf(dialogues, tokenizer, model, device)
-    insert_into_graphdb(rdf_graph, sparql_endpoint)
+        # Update the previous_utterance_uri to the current one for the next round
+        previous_utterance_uri = f"urn:utterance:{person_id}_{utterance_id}"
 
 
 if __name__ == "__main__":
-    main()
+    process_dialogue_file(r"C:/Users/shambhawi/Source/Repos/cluster_study1/Case Study-1.txt")
