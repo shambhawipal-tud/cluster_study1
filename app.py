@@ -60,5 +60,10 @@ def toggle_content():
     
     return jsonify({"case_study": case_study_text, "company_laws": company_laws_text})
 
+@app.route('/review-clusters')
+def review_clusters():
+    return render_template('review_clusters.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True)
