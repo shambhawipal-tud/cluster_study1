@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="center-text-box">
+        <p>Please go through the summary of this case study</p>
+    </div>
+
+    <div class="bottom-right-button">
+        <a href="{{ url_for('next_page') }}" class="continue-button">Press to continue</a>
+    </div>
+</body>
+</html>
