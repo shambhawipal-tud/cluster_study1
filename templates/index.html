@@ -5,8 +5,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="center-text-box">
-        <p>Please go through the summary of this case study</p>
+    <div class="container">
+        <h1 class="page-heading">Case Study: Workplace Harassment</h1>
+
+        <div class="center-text-box">
+            <div class="summary-content">
+                {{ summary.replace('\n', '<br><br>')|safe }}
+            </div>
+        </div>
     </div>
 
     <div class="bottom-right-button">
