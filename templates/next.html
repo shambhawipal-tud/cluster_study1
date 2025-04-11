@@ -3,6 +3,7 @@
 <head>
     <title>Case Study Details</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <div class="split left">
@@ -10,8 +11,13 @@
             <h1 class="page-heading">Case Study: Workplace Harassment</h1>
         </div>
 
-        <div class="summary-content">
-            {{ summary.replace('\n', '<br><br>')|safe }}
+        <div class="summary-content" id="content">
+            {{ case_study|safe }} <!-- Initially display case study -->
+        </div>
+
+        <!-- Button to toggle between case study and company laws -->
+        <div class="bottom-left-button">
+            <button id="toggle-button" onclick="toggleContent()">See the Company Laws</button>
         </div>
     </div>
 
@@ -21,5 +27,31 @@
             <p>Content for the right side will be added later!</p>
         </div>
     </div>
+
+    <script>
+        let isCaseStudy = true;
+
+        function toggleContent() {
+            isCaseStudy = !isCaseStudy;
+
+            // Update the button text
+            const button = document.getElementById('toggle-button');
+            if (isCaseStudy) {
+                button.textContent = 'See the Company Laws';
+            } else {
+                button.textContent = 'See the Case Study';
+            }
+
+            // Make an AJAX request to toggle content
+            $.get('/toggle', function (data) {
+                const contentDiv = document.getElementById('content');
+                if (isCaseStudy) {
+                    contentDiv.innerHTML = data.case_study.replace('\n', '<br><br>');
+                } else {
+                    contentDiv.innerHTML = data.company_laws.replace('\n', '<br><br>');
+                }
+            });
+        }
+    </script>
 </body>
 </html>
