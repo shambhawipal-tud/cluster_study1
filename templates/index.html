@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Welcome</title>
+    <title>Case Study</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -10,11 +10,12 @@
 
         <div class="center-text-box">
             <div class="summary-content">
-                {{ summary.replace('\n', '<br><br>')|safe }}
+                {{ case_study|safe }} <!-- Display case study text -->
             </div>
         </div>
     </div>
 
+    <!-- Bottom-right button to continue to the next page -->
     <div class="bottom-right-button">
         <a href="{{ url_for('next_page') }}" class="continue-button">Press to continue</a>
     </div>
