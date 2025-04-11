@@ -23,8 +23,93 @@
 
     <div class="split right">
         <div class="centered">
-            <!-- Right side content will go here in the future -->
-            <p>Content for the right side will be added later!</p>
+            <!-- Right side content -->
+            <div class="split right">
+                <div class="question-section">
+
+                    <h2>Question 1:</h2>
+                    <p>Which company policies do you think can be relevant here? (Mention all the laws here)</p>
+
+                    <div class="question-list">
+                        <label>
+                            <input type="checkbox" name="policies" value="personnel_laws">
+                            Personnel Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="disciplinary_laws">
+                            Disciplinary Action Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="evaluation_ethics">
+                            Performance Evaluation Ethics
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="tech_use_laws">
+                            Technology Use Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="privacy_laws">
+                            Privacy Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="payment_laws">
+                            Payment Laws (Customer/Vendor)
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="confidentiality_laws">
+                            Confidentiality Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="whistleblower_protection">
+                            Whistleblower Protection Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="employee_performance_laws">
+                            Employee Performance Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label><br>
+
+                        <label>
+                            <input type="checkbox" name="policies" value="document_retention">
+                            Document and Records Retention Laws
+                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                        </label>
+                    </div>
+
+
+                    <h2>Question 2:</h2>
+                    <p>Are you more interested in people or events? Check one:</p>
+                    <label><input type="radio" name="grouping" value="speaker"> Grouping by speaker (Josh/Sophia/Karen)</label><br>
+                    <label><input type="radio" name="grouping" value="event"> Grouping by event type (e.g., inappropriate message, workload shift)</label><br>
+                    <label><input type="radio" name="grouping" value="timeline"> Grouping by timeline (before/after complaint)</label><br>
+                    <label><input type="radio" name="grouping" value="unsure"> Not sure yet</label>
+
+                    <h2>Question 3:</h2>
+                    <p>What are you trying to evaluate in this case? (Select all that apply)</p>
+                    <label><input type="checkbox" name="evaluate" value="behavior"> Behavior patterns</label><br>
+                    <label><input type="checkbox" name="evaluate" value="power"> Power dynamics</label><br>
+                    <label><input type="checkbox" name="evaluate" value="other"> Something else:</label><br>
+                    <input type="text" placeholder="Type here..." style="width: 100%; margin-top: 5px;"><br><br>
+
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -53,5 +138,20 @@
             });
         }
     </script>
+    <script>
+        // Enable/disable justification textbox based on checkbox state
+        $(document).ready(function () {
+            $('input[type="checkbox"][name="policies"]').change(function () {
+                const textbox = $(this).siblings('.inline-textbox');
+                if (this.checked) {
+                    textbox.prop('disabled', false);
+                } else {
+                    textbox.prop('disabled', true);
+                    textbox.val(''); // Optional: clear the text when disabled
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>

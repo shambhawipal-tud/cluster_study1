@@ -120,3 +120,46 @@ button {
     button:hover {
         background-color: #0056b3;
     }
+
+.question-section {
+    padding: 20px;
+    font-size: 16px;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.question-section h2 {
+        margin-top: 20px;
+        font-size: 20px;
+        color: #333;
+}
+
+.question-section input[type="radio"],
+    .question-section input[type="text"],
+    .question-section textarea {
+        margin-top: 8px;
+        margin-bottom: 12px;
+}
+
+.question-section textarea,
+.question-section input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        resize: vertical;
+}
+
+.inline-textbox {
+    margin-left: 10px;
+    width: 60%;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.inline-textbox:disabled {
+        background-color: #f0f0f0;
+        cursor: not-allowed;
+}
+

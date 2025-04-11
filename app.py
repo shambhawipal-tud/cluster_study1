@@ -19,6 +19,7 @@ def index():
 
 @app.route('/next')
 def next_page():
+
     case_study_text = ""
     company_laws_text = ""
     
