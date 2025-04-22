@@ -59,12 +59,10 @@ def insert_data_to_graphdb(person_id, utterance_id, content, previous_utterance_
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     INSERT DATA {{
-        <{person_uri}> rdfs:label "Person {person_id}" .
-
-        <{utterance_uri}> rdfs:label "{content}" .
+        <{person_uri}> rdfs:label "Person {person_id}".
+        <{utterance_uri}> rdfs:label "{content}".
         <{utterance_uri}> <urn:spokenBy> <{person_uri}> .
         <{utterance_uri}> <urn:hasTimestamp> "{timestamp}"^^xsd:dateTime .
-
         {f'<{utterance_uri}> <urn:refersTo> <{previous_utterance_uri}> .' if previous_utterance_uri else ""}
     }}
     """
