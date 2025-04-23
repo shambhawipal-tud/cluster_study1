@@ -1,69 +1,90 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import os
+from information_extraction.clustering_logic import cluster_pipeline
 
 app = Flask(__name__)
+
+# Absolute file paths
+CASE_STUDY_PATH = r"C:\Users\shambhawi\Source\Repos\cluster_study1\Case Study-1.txt"
+COMPANY_LAWS_PATH = r"C:\Users\shambhawi\Source\Repos\cluster_study1\company_laws.txt"
+CASE_STUDY_SUMMARY_PATH = r"C:\Users\shambhawi\Source\Repos\cluster_study1\case_study_summary.txt"
+
 
 @app.route('/')
 def index():
     case_study_text = ""
-    
-    case_study_path = os.path.join(os.path.dirname(__file__), "case_study_summary.txt")
-    
+    case_study_path = CASE_STUDY_SUMMARY_PATH
     try:
-        with open(case_study_path, "r", encoding="utf-8") as file:
-            case_study_text = file.read()
+        with open(case_study_path, "r", encoding="utf-8") as f:
+            case_study_text = f.read()
     except FileNotFoundError:
         case_study_text = "Case study summary not found."
-
     return render_template("index.html", case_study=case_study_text)
 
 @app.route('/next')
 def next_page():
-
     case_study_text = ""
     company_laws_text = ""
-    
-    case_study_path = os.path.join(os.path.dirname(__file__), "case_study_summary.txt")
-    company_laws_path = os.path.join(os.path.dirname(__file__), "company_laws.txt")
-    
+    base = os.path.dirname(__file__)
     try:
-        with open(case_study_path, "r", encoding="utf-8") as file:
-            case_study_text = file.read()
-        
-        with open(company_laws_path, "r", encoding="utf-8") as file:
-            company_laws_text = file.read()
-            
+        with open(CASE_STUDY_SUMMARY_PATH, "r", encoding="utf-8") as f:
+            case_study_text = f.read()
+        with open(COMPANY_LAWS_PATH, "r", encoding="utf-8") as f:
+            company_laws_text = f.read()
     except FileNotFoundError:
         case_study_text = "Case study summary not found."
         company_laws_text = "Company laws text not found."
-
-    return render_template("next.html", case_study=case_study_text, company_laws=company_laws_text)
+    return render_template("next.html",
+                           case_study=case_study_text,
+                           company_laws=company_laws_text)
 
 @app.route('/toggle')
 def toggle_content():
-    case_study_text = ""
-    company_laws_text = ""
-    
-    case_study_path = os.path.join(os.path.dirname(__file__), "case_study_summary.txt")
-    company_laws_path = os.path.join(os.path.dirname(__file__), "company_laws.txt")
-    
+    base = os.path.dirname(__file__)
     try:
-        with open(case_study_path, "r", encoding="utf-8") as file:
-            case_study_text = file.read()
-        
-        with open(company_laws_path, "r", encoding="utf-8") as file:
-            company_laws_text = file.read()
-            
+        with open(CASE_STUDY_SUMMARY_PATH, "r", encoding="utf-8") as f:
+            cs = f.read()
+        with open(COMPANY_LAWS_PATH, "r", encoding="utf-8") as f:
+            cl = f.read()
     except FileNotFoundError:
-        case_study_text = "Case study summary not found."
-        company_laws_text = "Company laws text not found."
-    
-    return jsonify({"case_study": case_study_text, "company_laws": company_laws_text})
+        cs, cl = "Not found.", "Not found."
+    return jsonify({"case_study": cs, "company_laws": cl})
 
-@app.route('/review-clusters')
+@app.route('/review-clusters', methods=['GET','POST'])
 def review_clusters():
-    return render_template('review_clusters.html')
-
+    if request.method == 'POST':
+        # load transcript
+        base = os.path.dirname(__file__)
+        with open(CASE_STUDY_PATH, "r", encoding="utf-8") as f:
+            transcript = f.read()
+        # Q1
+        selected = request.form.getlist('policies')
+        user_justifications = {}
+        for pol in selected:
+            user_justifications[pol] = request.form.get(f'justification_{pol}', '')
+        # Q2
+        grouping = request.form.get('grouping', 'event')
+        if grouping == 'unsure':
+            grouping = 'event'
+        # Q3
+        evals = request.form.getlist('evaluate')
+        evaluation_goals = []
+        for ev in evals:
+            if ev == 'other':
+                other = request.form.get('evaluate_other_text','').strip()
+                if other:
+                    evaluation_goals.append(other)
+            else:
+                evaluation_goals.append(ev)
+        # run clustering
+        clusters = cluster_pipeline(transcript,
+                                    user_justifications,
+                                    grouping,
+                                    evaluation_goals,
+                                    n_clusters=5)
+        return render_template('review_clusters.html', clusters=clusters)
+    else:
+        return render_template('review_clusters.html', clusters=None)
 
 if __name__ == '__main__':
     app.run(debug=True)

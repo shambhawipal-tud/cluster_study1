@@ -5,14 +5,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Top-right button -->
     <div class="top-right-button">
         <a href="{{ url_for('next_page') }}" class="continue-button">Back to Preferences</a>
     </div>
-
     <div class="container">
         <h1 class="page-heading">Here is the information organized based on your selected grouping preference</h1>
-        
+        {% if clusters %}
+        {% for cluster in clusters %}
+        <div class="cluster">
+            <h2>{{ cluster.title }}</h2>
+            <ul>
+                {% for utt in cluster.texts %}
+                <li>{{ utt }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No clusters to display yet. Please complete your preferences first.</p>
+        {% endif %}
     </div>
 </body>
 </html>

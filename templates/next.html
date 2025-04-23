@@ -10,94 +10,78 @@
         <div class="title-container">
             <h1 class="page-heading">Case Study: Workplace Harassment</h1>
         </div>
-
         <div class="summary-content" id="content">
-            {{ case_study|safe }} <!-- Initially display case study -->
+            {{ case_study|safe }}
         </div>
-
-        <!-- Button to toggle between case study and company laws -->
         <div class="bottom-left-button">
             <button id="toggle-button" onclick="toggleContent()">See the Company Laws</button>
         </div>
     </div>
 
-    <div class="split right">
-        <div class="centered">
-            <!-- Right side content -->
-            <div class="split right">
+    <form action="{{ url_for('review_clusters') }}" method="post">
+        <div class="split right">
+            <div class="centered">
                 <div class="question-section">
-
                     <h2>Question 1:</h2>
                     <p>Which company policies do you think can be relevant here? Mention all the laws here, and for every law that you picked, please provide your justification on why the law is applicable for this specific case</p>
-
                     <div class="question-list">
                         <label>
                             <input type="checkbox" name="policies" value="personnel_laws">
                             Personnel Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_personnel_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="disciplinary_laws">
                             Disciplinary Action Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_disciplinary_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="evaluation_ethics">
                             Performance Evaluation Ethics
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_evaluation_ethics" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="tech_use_laws">
                             Technology Use Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_tech_use_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="privacy_laws">
                             Privacy Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_privacy_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="payment_laws">
                             Payment Laws (Customer/Vendor)
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_payment_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="confidentiality_laws">
                             Confidentiality Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_confidentiality_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="whistleblower_protection">
                             Whistleblower Protection Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_whistleblower_protection" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="employee_performance_laws">
                             Employee Performance Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_employee_performance_laws" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label><br>
-
                         <label>
                             <input type="checkbox" name="policies" value="document_retention">
                             Document and Records Retention Laws
-                            <input type="text" placeholder="Your justification..." class="inline-textbox" disabled>
+                            <input type="text" name="justification_document_retention" placeholder="Your justification..." class="inline-textbox" disabled>
                         </label>
                     </div>
 
-
                     <h2>Question 2:</h2>
                     <p>Are you more interested in people or events? Check one:</p>
-                    <label><input type="radio" name="grouping" value="speaker"> Grouping by speaker (Josh/Sophia/Karen)</label><br>
-                    <label><input type="radio" name="grouping" value="event"> Grouping by event type (e.g., inappropriate message, workload shift)</label><br>
-                    <label><input type="radio" name="grouping" value="timeline"> Grouping by timeline (before/after complaint)</label><br>
+                    <label><input type="radio" name="grouping" value="speaker"> Grouping by speaker</label><br>
+                    <label><input type="radio" name="grouping" value="event" checked> Grouping by event type</label><br>
+                    <label><input type="radio" name="grouping" value="timeline"> Grouping by timeline</label><br>
                     <label><input type="radio" name="grouping" value="unsure"> Not sure yet</label>
 
                     <h2>Question 3:</h2>
@@ -105,58 +89,33 @@
                     <label><input type="checkbox" name="evaluate" value="behavior"> Behavior patterns</label><br>
                     <label><input type="checkbox" name="evaluate" value="power"> Power dynamics</label><br>
                     <label><input type="checkbox" name="evaluate" value="other"> Something else:</label><br>
-                    <input type="text" placeholder="Type here..." style="width: 100%; margin-top: 5px;"><br><br>
-
+                    <input type="text" name="evaluate_other_text" placeholder="Type here..." style="width:100%; margin-top:5px;"><br><br>
                 </div>
             </div>
-
+            <div class="bottom-right-button">
+                <button type="submit" class="continue-button">Review my structure</button>
+            </div>
         </div>
-        <!-- Review Clusters Button -->
-        <div class="bottom-right-button">
-            <a href="{{ url_for('review_clusters') }}" class="continue-button">Review my structure</a>
-        </div>
-
-    </div>
+    </form>
 
     <script>
         let isCaseStudy = true;
-
         function toggleContent() {
             isCaseStudy = !isCaseStudy;
-
-            // Update the button text
             const button = document.getElementById('toggle-button');
-            if (isCaseStudy) {
-                button.textContent = 'See the Company Laws';
-            } else {
-                button.textContent = 'See the Case Study';
-            }
-
-            // Make an AJAX request to toggle content
-            $.get('/toggle', function (data) {
-                const contentDiv = document.getElementById('content');
-                if (isCaseStudy) {
-                    contentDiv.innerHTML = data.case_study.replace('\n', '<br><br>');
-                } else {
-                    contentDiv.innerHTML = data.company_laws.replace('\n', '<br><br>');
-                }
+            button.textContent = isCaseStudy ? 'See the Company Laws' : 'See the Case Study';
+            $.get('/toggle', data => {
+                const content = document.getElementById('content');
+                content.innerHTML = (isCaseStudy ? data.case_study : data.company_laws).replace(/\n/g, '<br><br>');
             });
         }
-    </script>
-    <script>
-        // Enable/disable justification textbox based on checkbox state
-        $(document).ready(function () {
+        $(document).ready(() => {
             $('input[type="checkbox"][name="policies"]').change(function () {
-                const textbox = $(this).siblings('.inline-textbox');
-                if (this.checked) {
-                    textbox.prop('disabled', false);
-                } else {
-                    textbox.prop('disabled', true);
-                    textbox.val(''); // Optional: clear the text when disabled
-                }
+                const tb = $(this).siblings('.inline-textbox');
+                if (this.checked) tb.prop('disabled', false);
+                else { tb.prop('disabled', true).val(''); }
             });
         });
     </script>
-
 </body>
 </html>
