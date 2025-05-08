@@ -58,21 +58,21 @@ def chunk_by_event(text: str) -> list:
                 chunks.append({'text': utterance, 'event_type': evt})
     return chunks
 
-def chunk_by_timeline(text: str) -> list:
-    lower = text.lower()
-    idx = lower.find('complaint')
-    if idx == -1:
-        phase_texts = [('full', text)]
-    else:
-        phase_texts = [('before', text[:idx]), ('after', text[idx:])]
-    chunks = []
-    for phase, segment in phase_texts:
-        for line in segment.splitlines():
-            if ':' in line:
-                utterance = line.split(':',1)[1].strip()
-                if utterance:
-                    chunks.append({'text': utterance, 'time_phase': phase})
-    return chunks
+# def chunk_by_timeline(text: str) -> list:
+#     lower = text.lower()
+#     idx = lower.find('complaint')
+#     if idx == -1:
+#         phase_texts = [('full', text)]
+#     else:
+#         phase_texts = [('before', text[:idx]), ('after', text[idx:])]
+#     chunks = []
+#     for phase, segment in phase_texts:
+#         for line in segment.splitlines():
+#             if ':' in line:
+#                 utterance = line.split(':',1)[1].strip()
+#                 if utterance:
+#                     chunks.append({'text': utterance, 'time_phase': phase})
+#     return chunks
 
 # load sentence‐transformer once
 embed_model = SentenceTransformer('all-mpnet-base-v2')
@@ -80,8 +80,6 @@ embed_model = SentenceTransformer('all-mpnet-base-v2')
 def embed_justifications(user_justifications: dict) -> dict:
     return { law: embed_model.encode(text) for law, text in user_justifications.items() }
 
-def embed_goals(goal_prompts: dict) -> dict:
-    return { goal: embed_model.encode(prompt) for goal, prompt in goal_prompts.items() }
 
 def match_laws_to_chunks(chunks: list, just_vecs: dict, threshold: float = 0.3) -> None:
     chunk_vecs = np.vstack([embed_model.encode(c['text']) for c in chunks])
@@ -91,15 +89,13 @@ def match_laws_to_chunks(chunks: list, just_vecs: dict, threshold: float = 0.3) 
     for i, chunk in enumerate(chunks):
         chunk['laws'] = [law_names[j] for j, score in enumerate(sim[i]) if score >= threshold]
 
-def build_final_vectors(chunks: list, just_vecs: dict, goal_vecs: dict,
-                        alpha: float = 0.5, gamma: float = 0.2) -> np.ndarray:
+def build_final_vectors(chunks: list, just_vecs: dict,
+                        alpha: float = 0.5) -> np.ndarray:
     vecs = []
     for chunk in chunks:
         c = embed_model.encode(chunk['text'])
         for law in chunk.get('laws', []):
             c += alpha * just_vecs[law]
-        for g in goal_vecs.values():
-            c += gamma * g
         norm = np.linalg.norm(c)
         if norm > 0:
             c = c / norm
@@ -122,28 +118,19 @@ def name_cluster(texts: list) -> str:
 def cluster_pipeline(transcript: str,
                      user_justifications: dict,
                      grouping: str,
-                     evaluation_goals: list,
                      n_clusters: int = 5) -> list:
     # 1. chunk
     if grouping == 'event':
         chunks = chunk_by_event(transcript)
-    else:
-        chunks = chunk_by_timeline(transcript)
-    # 2. embed just & goals
+    # else:
+    #     chunks = chunk_by_timeline(transcript)
+    # 2. embed justifications
     just_vecs = embed_justifications(user_justifications)
-    goal_prompts = {}
-    for ev in evaluation_goals:
-        if ev == 'behavior':
-            goal_prompts['Behavior patterns'] = 'behavior patterns in workplace dialogue'
-        elif ev == 'power':
-            goal_prompts['Power dynamics'] = 'power imbalance in managerial communication'
-        else:
-            goal_prompts[ev] = ev
-    goal_vecs = embed_goals(goal_prompts)
+    
     # 3. match laws
     match_laws_to_chunks(chunks, just_vecs)
     # 4. fuse
-    embeddings = build_final_vectors(chunks, just_vecs, goal_vecs)
+    embeddings = build_final_vectors(chunks, just_vecs)
     # 5. cluster
     labels = cluster_embeddings(embeddings, n_clusters)
     # 6. group & name
