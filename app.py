@@ -66,21 +66,11 @@ def review_clusters():
         grouping = request.form.get('grouping', 'event')
         if grouping == 'unsure':
             grouping = 'event'
-        # Q3
-        evals = request.form.getlist('evaluate')
-        evaluation_goals = []
-        for ev in evals:
-            if ev == 'other':
-                other = request.form.get('evaluate_other_text','').strip()
-                if other:
-                    evaluation_goals.append(other)
-            else:
-                evaluation_goals.append(ev)
+
         # run clustering
         clusters = cluster_pipeline(transcript,
                                     user_justifications,
                                     grouping,
-                                    evaluation_goals,
                                     n_clusters=5)
         return render_template('review_clusters.html', clusters=clusters)
     else:
