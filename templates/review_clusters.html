@@ -3,27 +3,113 @@
 <head>
     <title>Cluster Review</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .left-panel {
+            width: 50%;
+            overflow-y: auto;
+            border-right: 1px solid #ccc;
+            padding-right: 20px;
+        }
+
+        .right-panel {
+            width: 50%;
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-box {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+
+        .chat-input {
+            display: flex;
+        }
+
+            .chat-input input[type="text"] {
+                flex-grow: 1;
+                padding: 10px;
+                font-size: 16px;
+            }
+
+            .chat-input button {
+                padding: 10px;
+                font-size: 16px;
+            }
+
+        .cluster {
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
     <div class="top-right-button">
         <a href="{{ url_for('next_page') }}" class="continue-button">Back to Preferences</a>
     </div>
     <div class="container">
-        <h1 class="page-heading">Here is the information organized based on your selected grouping preference</h1>
-        {% if clusters %}
-        {% for cluster in clusters %}
-        <div class="cluster">
-            <h2>{{ cluster.title }}</h2>
-            <ul>
-                {% for utt in cluster.texts %}
-                <li>{{ utt }}</li>
-                {% endfor %}
-            </ul>
+        <!-- LEFT: Clusters -->
+        <div class="left-panel">
+            <h1 class="page-heading">Here is the information organized based on your selected grouping preference</h1>
+            {% if clusters %}
+            {% for cluster in clusters %}
+            <div class="cluster">
+                <h2>{{ cluster.title }}</h2>
+                <ul>
+                    {% for utt in cluster.texts %}
+                    <li>{{ utt }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p>No clusters to display yet. Please complete your preferences first.</p>
+            {% endif %}
         </div>
-        {% endfor %}
-        {% else %}
-        <p>No clusters to display yet. Please complete your preferences first.</p>
-        {% endif %}
+
+        <!-- RIGHT: Chat -->
+        <div class="right-panel">
+            <h2>Chat</h2>
+            <div class="chat-box" id="chatBox"></div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Type your message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
     </div>
+
+    <script>
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('chatBox');
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            chatBox.appendChild(messageDiv);
+
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
 </body>
 </html>
